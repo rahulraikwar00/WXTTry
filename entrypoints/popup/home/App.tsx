@@ -1,42 +1,27 @@
 import { useState } from "react";
 import "./App.css";
+import { sendToBackground, sendToContent } from "@/utils/messaging";
 
 function App() {
   const [value, setValue] = useState("");
   const [messages, setMessages] = useState<
-    { id: number; source: string; text: string }[]
+    { id: number; source: string; message: string }[]
   >([]);
 
   const handleButtonClick = async (props: string) => {
-    // Add the user's message
-    setMessages((prevMessages) => [
-      ...prevMessages,
-      { id: Date.now(), source: props, text: value },
-    ]);
-
-    try {
-      const response = await browser.runtime.sendMessage({
-        messages: value,
-      });
-
-      // Check if the response is defined before updating the state
-      if (response !== undefined) {
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          {
-            id: Date.now(),
-            source: "background",
-            text: JSON.stringify(response.message),
-          },
-        ]);
-      } else {
-        console.error("Received undefined response from background script");
-      }
-    } catch (error) {
-      console.error("Error sending message to background script:", error);
-    }
-
+    const id = Date.now();
+    setMessages((prev) => [...prev, { id, source: props, message: value }]);
     setValue("");
+    const response = await sendToBackground({ message: value });
+    setMessages((prev) => [
+      ...prev,
+      { id, source: "background", message: response },
+    ]);
+    const response2 = await sendToContent({ message: value });
+    setMessages((prev) => [
+      ...prev,
+      { id, source: "content", message: response2 },
+    ]);
   };
 
   return (
@@ -57,7 +42,7 @@ function App() {
       </div>
       {messages.map((message) => (
         <div key={message.id} className="card">
-          <b>{message.source}:</b> {message.text}
+          <b>{message.source}:</b> {message.message}
         </div>
       ))}
     </>
