@@ -1,9 +1,8 @@
+import { sendToBackground } from "@/utils/messaging";
+
 export default defineContentScript({
   matches: ["<all_urls>"],
   main() {
-    browser.runtime.onMessage.addListener((message) => {
-      console.log("Message received from background script:", message.message);
-      return true;
-    });
+    sendToBackground({ message: "Hello from content script!" });
   },
 });
